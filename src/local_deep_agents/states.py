@@ -1,8 +1,7 @@
 from typing import Annotated, Literal, NotRequired
 from typing_extensions import TypedDict
+from langchain.agents.middleware import AgentState
 
-from langgraph.prebuilt.chat_agent_executor import AgentState
-from pydantic import BaseModel, Field
 
 def file_reducer(left, right):
     """Merge two file dictionaries, with right side taking precedence.
@@ -24,6 +23,7 @@ def file_reducer(left, right):
     else:
         return {**left, **right}
 
+
 class Todo(TypedDict):
     """A structured task item for tracking progress through complex workflows.
 
@@ -34,6 +34,7 @@ class Todo(TypedDict):
 
     content: str
     status: Literal["pending", "in_progress", "completed"]
+
 
 class DeepAgentState(AgentState):
     """Extended agent state that includes task tracking and virtual file system.
@@ -46,7 +47,10 @@ class DeepAgentState(AgentState):
     todos: NotRequired[list[Todo]]
     files: Annotated[NotRequired[dict[str, str]], file_reducer]
 
-class Summary(BaseModel):
-  """Schema for webpage content summarization."""
-  filename: str = Field(description="Name of the file to store.")
-  summary: str = Field(description="Key learnings from the webpage.")
+
+class PlanningState(AgentState):
+    todos: NotRequired[list[Todo]]
+
+
+class FilesystemState(AgentState):
+    files: Annotated[NotRequired[dict[str, str]], file_reducer]

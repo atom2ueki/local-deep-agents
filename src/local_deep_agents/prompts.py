@@ -1,193 +1,413 @@
-WRITE_TODOS_DESCRIPTION = """Create and manage structured task lists for tracking progress through complex workflows.
+WRITE_TODOS_TOOL_DESCRIPTION = """Use this tool to create and manage a structured task list for your current work session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
+It also helps the user understand the progress of the task and overall progress of their requests.
+Only use this tool if you think it will be helpful in staying organized. If the user's request is trivial and takes less than 3 steps, it is better to NOT use this tool and just do the taks directly.
 
-## When to Use
-- Multi-step or non-trivial tasks requiring coordination
-- When user provides multiple tasks or explicitly requests todo list
-- Avoid for single, trivial actions unless directed otherwise
+## When to Use This Tool
+Use this tool in these scenarios:
 
-## Structure
-- Maintain one list containing multiple todo objects (content, status, id)
-- Use clear, actionable content descriptions
-- Status must be: pending, in_progress, or completed
+1. Complex multi-step tasks - When a task requires 3 or more distinct steps or actions
+2. Non-trivial and complex tasks - Tasks that require careful planning or multiple operations
+3. User explicitly requests todo list - When the user directly asks you to use the todo list
+4. User provides multiple tasks - When users provide a list of things to be done (numbered or comma-separated)
+5. The plan may need future revisions or updates based on results from the first few steps. Keeping track of this in a list is helpful.
 
-## Best Practices
-- Only one in_progress task at a time
-- Mark completed immediately when task is fully done
-- Always send the full updated list when making changes
-- Prune irrelevant items to keep list focused
+## How to Use This Tool
+1. When you start working on a task - Mark it as in_progress BEFORE beginning work.
+2. After completing a task - Mark it as completed and add any new follow-up tasks discovered during implementation.
+3. You can also update future tasks, such as deleting them if they are no longer necessary, or adding new tasks that are necessary. Don't change previously completed tasks.
+4. You can make several updates to the todo list at once. For example, when you complete a task, you can mark the next task you need to start as in_progress.
 
-## Progress Updates
-- Call TodoWrite again to change task status or edit content
-- Reflect real-time progress; don't batch completions
-- If blocked, keep in_progress and add new task describing blocker
+## When NOT to Use This Tool
+It is important to skip using this tool when:
+1. There is only a single, straightforward task
+2. The task is trivial and tracking it provides no benefit
+3. The task can be completed in less than 3 trivial steps
+4. The task is purely conversational or informational
 
-## Parameters
-- todos: List of TODO items with content and status fields
+## Examples of When to Use the Todo List
 
-## Returns
-Updates agent state with new todo list."""
+<example>
+User: I want to add a dark mode toggle to the application settings. Make sure you run the tests and build when you're done!
+Assistant: I'll help add a dark mode toggle to your application settings. Let me create a todo list to track this implementation.
+*Creates todo list with the following items:*
+1. Create dark mode toggle component in Settings page
+2. Add dark mode state management (context/store)
+3. Implement CSS-in-JS styles for dark theme
+4. Update existing components to support theme switching
+5. Run tests and build process, addressing any failures or errors that occur
+*Begins working on the first task*
 
-TODO_USAGE_INSTRUCTIONS = """Based upon the user's request:
+<reasoning>
+The assistant used the todo list because:
+1. Adding dark mode in it of itself is a multi-step feature requiring UI, state management, and styling changes
+2. The assistant inferred that tests and build need to pass by adding "Ensure tests and build succeed" as the final task
+3. Both of the user's requests are complex and require multiple steps to complete.
+</reasoning>
+</example>
+
+<example>
+User: Help me plan a comprehensive marketing campaign for our new product launch, including social media, email marketing, and press releases.
+Assistant: I'll help you plan a comprehensive marketing campaign for your product launch. Let me create a todo list to organize all the components.
+*Creates todo list with the following items:*
+1. Define target audience and key messaging
+2. Create social media content calendar and posting schedule
+3. Design email marketing sequence and automation flows
+4. Draft press release and identify media contacts
+5. Set up tracking and analytics for campaign performance
+6. Create visual assets and brand materials
+7. Coordinate launch timeline and deliverables
+*Begins working on the first task*
+
+<reasoning>
+The assistant used the todo list because:
+1. Marketing campaign planning involves multiple distinct channels and activities
+2. Each component requires careful coordination and planning
+3. The systematic approach ensures all aspects of the launch are covered
+</reasoning>
+</example>
+
+<example>
+User: Help me rename the function getCwd to getCurrentWorkingDirectory across my project
+Assistant: Let me first search through your codebase to find all occurrences of 'getCwd'.
+*Uses search tools to locate all instances of getCwd in the codebase*
+Assistant: I've found 15 instances of 'getCwd' across 8 different files. Let me create a todo list to track these changes.
+*Creates todo list with specific items for each file that needs updating*
+
+<reasoning>
+The assistant used the todo list because:
+1. The assistant searched to understand the scope of the task
+2. Upon finding multiple occurrences across different files, it determined this was a complex task with multiple steps (>3)
+3. The todo list helps ensure every instance is tracked and updated systematically
+4. This approach prevents missing any occurrences and maintains consistency.
+</reasoning>
+</example>
+
+<example>
+User: I need help organizing my home office: decluttering the desk, setting up a filing system, organizing digital files, and creating a daily workflow.
+Assistant: I'll help you organize your home office systematically. Let me create a todo list to track each area of organization.
+*Creates todo list with items like: 1) Sort and declutter desk items, 2) Set up physical filing system for documents, 3) Organize digital files and folders, 4) Create daily workflow and productivity systems, 5) Establish maintenance routines*
+Let's start with decluttering your desk space to create a clean foundation for the other organizational systems.
+
+<reasoning>
+The assistant used the todo list because:
+1. The user provided multiple distinct organizational tasks
+2. Each area requires different approaches and careful planning
+3. Home organization benefits from systematic, step-by-step completion
+4. Progress tracking ensures all areas are addressed thoroughly
+</reasoning>
+</example>
+
+## Examples of When NOT to Use the Todo List
+
+<example>
+User: How do I print 'Hello World' in Python?
+Assistant: In Python, you can print "Hello World" with this simple code:
+
+python
+print("Hello World")
+
+This will output the text "Hello World" to the console when executed.</assistant>
+
+<reasoning>
+The assistant did not use the todo list because this is a single, trivial task that can be completed in one step. There's no need to track multiple tasks or steps for such a straightforward request.
+</reasoning>
+</example>
+
+<example>
+User: What's the best way to water houseplants?
+Assistant: The best way to water houseplants depends on the specific plant type, but here are some general guidelines:
+
+- Check soil moisture by inserting your finger about 1-2 inches into the soil
+- Water thoroughly when the top inch feels dry, allowing water to drain from the bottom
+- Use room temperature water and water in the morning when possible
+- Avoid overwatering, which is more harmful than underwatering for most plants
+
+Different plants have different needs, so it's important to research your specific varieties for optimal care.
+
+<reasoning>
+The assistant did not use the todo list because this is an informational request with no actual tasks to complete. The user is simply asking for advice and explanation, not for the assistant to perform multiple steps or activities.
+</reasoning>
+</example>
+
+<example>
+User: Can you add a comment to the calculateTotal function to explain what it does?
+Assistant: Sure, let me add a comment to the calculateTotal function to explain what it does.
+* Uses the Edit tool to add a comment to the calculateTotal function *
+
+<reasoning>
+The assistant did not use the todo list because this is a single, straightforward task confined to one location. Adding a comment doesn't require tracking multiple steps or systematic organization.
+</reasoning>
+</example>
+
+<example>
+User: What time is it in Tokyo right now?
+Assistant: I'll check the current time in Tokyo for you.
+
+*Searches for current time in Tokyo*
+
+The current time in Tokyo, Japan is [current time]. Tokyo is in the Japan Standard Time (JST) zone, which is UTC+9.
+
+<reasoning>
+The assistant did not use the todo list because this is a single information lookup with immediate results. There are no multiple steps to track or organize, making the todo list unnecessary for this straightforward request.
+</reasoning>
+</example>
+
+<example>
+User: I need to write a function that checks if a number is prime and then test it out.
+Assistant: I'll help you write a function that checks if a number is prime and then test it out.
+*Writes function that checks if a number is prime*
+*Tests the function*
+
+<reasoning>
+Even though this is a multi-step task, it is very straightforward and can be completed in two trivial steps (which is less than 3 steps!). Using the todo list here is overkill and wastes time and tokens.
+</reasoning>
+</example>
+
+<example>
+User: I want you to order a pizza from Dominos, order a burger from McDonald's, and order a salad from Subway.
+Assistant: I'll help you order a pizza from Dominos, order a burger from McDonald's, and order a salad from Subway.
+*Orders a pizza from Dominos*
+*Orders a burger from McDonald's*
+*Orders a salad from Subway*
+
+<reasoning>
+Even though this is a multi-step task, assuming the assistant has the ability to order from these restaurants, it is very straightforward and can be completed in three trivial tool calls.
+Using the todo list here is overkill and wastes time and tokens. These three tool calls should be made in parallel, in fact.
+</reasoning>
+</example>
+
+
+## Task States and Management
+
+1. **Task States**: Use these states to track progress:
+   - pending: Task not yet started
+   - in_progress: Currently working on (you can have multiple tasks in_progress at a time if they are not related to each other and can be run in parallel)
+   - completed: Task finished successfully
+
+2. **Task Management**:
+   - Update task status in real-time as you work
+   - Mark tasks complete IMMEDIATELY after finishing (don't batch completions)
+   - Complete current tasks before starting new ones
+   - Remove tasks that are no longer relevant from the list entirely
+   - IMPORTANT: When you write this todo list, you should mark your first task (or tasks) as in_progress immediately!.
+   - IMPORTANT: Unless all tasks are completed, you should always have at least one task in_progress to show the user that you are working on something.
+
+3. **Task Completion Requirements**:
+   - ONLY mark a task as completed when you have FULLY accomplished it
+   - If you encounter errors, blockers, or cannot finish, keep the task as in_progress
+   - When blocked, create a new task describing what needs to be resolved
+   - Never mark a task as completed if:
+     - There are unresolved issues or errors
+     - Work is partial or incomplete
+     - You encountered blockers that prevent completion
+     - You couldn't find necessary resources or dependencies
+     - Quality standards haven't been met
+
+4. **Task Breakdown**:
+   - Create specific, actionable items
+   - Break complex tasks into smaller, manageable steps
+   - Use clear, descriptive task names
+
+Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully
+Remember: If you only need to make a few tool calls to complete a task, and it is clear what you need to do, it is better to just do the task directly and NOT call this tool at all.
+"""
+
+TASK_TOOL_DESCRIPTION = """Launch an ephemeral subagent to handle complex, multi-step independent tasks with isolated context windows.
+
+Available agent types and the tools they have access to:
+- general-purpose: General-purpose agent for researching complex questions, searching for files and content, and executing multi-step tasks. When you are searching for a keyword or file and are not confident that you will find the right match in the first few tries use this agent to perform the search for you. This agent has access to all tools as the main agent.
+{sub_agents}
+
+When using the Task tool, you must specify a subagent_type parameter to select which agent type to use.
+
+## Usage notes:
+1. Launch multiple agents concurrently whenever possible, to maximize performance; to do that, use a single message with multiple tool uses
+2. When the agent is done, it will return a single message back to you. The result returned by the agent is not visible to the user. To show the user the result, you should send a text message back to the user with a concise summary of the result.
+3. Each agent invocation is stateless. You will not be able to send additional messages to the agent, nor will the agent be able to communicate with you outside of its final report. Therefore, your prompt should contain a highly detailed task description for the agent to perform autonomously and you should specify exactly what information the agent should return back to you in its final and only message to you.
+4. The agent's outputs should generally be trusted
+5. Clearly tell the agent whether you expect it to create content, perform analysis, or just do research (search, file reads, web fetches, etc.), since it is not aware of the user's intent
+6. If the agent description mentions that it should be used proactively, then you should try your best to use it without the user having to ask for it first. Use your judgement.
+7. When only the general-purpose agent is provided, you should use it for all tasks. It is great for isolating context and token usage, and completing specific, complex tasks, as it has all the same capabilities as the main agent.
+
+### Example usage of the general-purpose agent:
+
+<example_agent_descriptions>
+"general-purpose": use this agent for general purpose tasks, it has access to all tools as the main agent.
+</example_agent_descriptions>
+
+<example>
+User: "I want to conduct research on the accomplishments of Lebron James, Michael Jordan, and Kobe Bryant, and then compare them."
+Assistant: *Uses the task tool in parallel to conduct isolated research on each of the three players*
+Assistant: *Synthesizes the results of the three isolated research tasks and responds to the User*
+<commentary>
+Research is a complex, multi-step task in it of itself.
+The research of each individual player is not dependent on the research of the other players.
+The assistant uses the task tool to break down the complex objective into three isolated tasks.
+Each research task only needs to worry about context and tokens about one player, then returns synthesized information about each player as the Tool Result.
+This means each research task can dive deep and spend tokens and context deeply researching each player, but the final result is synthesized information, and saves us tokens in the long run when comparing the players to each other.
+</commentary>
+</example>
+
+<example>
+User: "Analyze a single large code repository for security vulnerabilities and generate a report."
+Assistant: *Launches a single `task` subagent for the repository analysis*
+Assistant: *Receives report and integrates results into final summary*
+<commentary>
+Subagent is used to isolate a large, context-heavy task, even though there is only one. This prevents the main thread from being overloaded with details.
+If the user then asks followup questions, we have a concise report to reference instead of the entire history of analysis and tool calls, which is good and saves us time and money.
+</commentary>
+</example>
+
+<example>
+User: "Schedule two meetings for me and prepare agendas for each."
+Assistant: *Calls the task tool in parallel to launch two `task` subagents (one per meeting) to prepare agendas*
+Assistant: *Returns final schedules and agendas*
+<commentary>
+Tasks are simple individually, but subagents help silo agenda preparation.
+Each subagent only needs to worry about the agenda for one meeting.
+</commentary>
+</example>
+
+<example>
+User: "I want to order a pizza from Dominos, order a burger from McDonald's, and order a salad from Subway."
+Assistant: *Calls tools directly in parallel to order a pizza from Dominos, a burger from McDonald's, and a salad from Subway*
+<commentary>
+The assistant did not use the task tool because the objective is super simple and clear and only requires a few trivial tool calls.
+It is better to just complete the task directly and NOT use the `task`tool.
+</commentary>
+</example>
+
+### Example usage with custom agents:
+
+<example_agent_descriptions>
+"content-reviewer": use this agent after you are done creating significant content or documents
+"greeting-responder": use this agent when to respond to user greetings with a friendly joke
+"research-analyst": use this agent to conduct thorough research on complex topics
+</example_agent_description>
+
+<example>
+user: "Please write a function that checks if a number is prime"
+assistant: Sure let me write a function that checks if a number is prime
+assistant: First let me use the Write tool to write a function that checks if a number is prime
+assistant: I'm going to use the Write tool to write the following code:
+<code>
+function isPrime(n) {{
+  if (n <= 1) return false
+  for (let i = 2; i * i <= n; i++) {{
+    if (n % i === 0) return false
+  }}
+  return true
+}}
+</code>
+<commentary>
+Since significant content was created and the task was completed, now use the content-reviewer agent to review the work
+</commentary>
+assistant: Now let me use the content-reviewer agent to review the code
+assistant: Uses the Task tool to launch with the content-reviewer agent
+</example>
+
+<example>
+user: "Can you help me research the environmental impact of different renewable energy sources and create a comprehensive report?"
+<commentary>
+This is a complex research task that would benefit from using the research-analyst agent to conduct thorough analysis
+</commentary>
+assistant: I'll help you research the environmental impact of renewable energy sources. Let me use the research-analyst agent to conduct comprehensive research on this topic.
+assistant: Uses the Task tool to launch with the research-analyst agent, providing detailed instructions about what research to conduct and what format the report should take
+</example>
+
+<example>
+user: "Hello"
+<commentary>
+Since the user is greeting, use the greeting-responder agent to respond with a friendly joke
+</commentary>
+assistant: "I'm going to use the Task tool to launch with the greeting-responder agent"
+</example>"""
+
+LIST_FILES_TOOL_DESCRIPTION = """Lists all files in the local filesystem.
+
+Usage:
+- The list_files tool will return a list of all files in the local filesystem.
+- This is very useful for exploring the file system and finding the right file to read or edit.
+- You should almost ALWAYS use this tool before using the Read or Edit tools."""
+
+READ_FILE_TOOL_DESCRIPTION = """Reads a file from the local filesystem. You can access any file directly by using this tool.
+Assume this tool is able to read all files on the machine. If the User provides a path to a file assume that path is valid. It is okay to read a file that does not exist; an error will be returned.
+
+Usage:
+- The file_path parameter must be an absolute path, not a relative path
+- By default, it reads up to 2000 lines starting from the beginning of the file
+- You can optionally specify a line offset and limit (especially handy for long files), but it's recommended to read the whole file by not providing these parameters
+- Any lines longer than 2000 characters will be truncated
+- Results are returned using cat -n format, with line numbers starting at 1
+- You have the capability to call multiple tools in a single response. It is always better to speculatively read multiple files as a batch that are potentially useful.
+- If you read a file that exists but has empty contents you will receive a system reminder warning in place of file contents.
+- You should ALWAYS make sure a file has been read before editing it."""
+
+EDIT_FILE_TOOL_DESCRIPTION = """Performs exact string replacements in files.
+
+Usage:
+- You must use your `Read` tool at least once in the conversation before editing. This tool will error if you attempt an edit without reading the file.
+- When editing text from Read tool output, ensure you preserve the exact indentation (tabs/spaces) as it appears AFTER the line number prefix. The line number prefix format is: spaces + line number + tab. Everything after that tab is the actual file content to match. Never include any part of the line number prefix in the old_string or new_string.
+- ALWAYS prefer editing existing files. NEVER write new files unless explicitly required.
+- Only use emojis if the user explicitly requests it. Avoid adding emojis to files unless asked.
+- The edit will FAIL if `old_string` is not unique in the file. Either provide a larger string with more surrounding context to make it unique or use `replace_all` to change every instance of `old_string`.
+- Use `replace_all` for replacing and renaming strings across the file. This parameter is useful if you want to rename a variable for instance."""
+
+WRITE_FILE_TOOL_DESCRIPTION = """Writes to a file in the local filesystem.
+
+Usage:
+- The file_path parameter must be an absolute path, not a relative path
+- The content parameter must be a string
+- The write_file tool will create the a new file.
+- Prefer to edit existing files over creating new ones when possible."""
+
+PLANNER_SYSTEM_PROMPT = """## `write_todos`, `read_todos`
+Based upon the user's request:
 1. Use the write_todos tool to create TODO at the start of a user request, per the tool description.
 2. After you accomplish a TODO, use the read_todos to read the TODOs in order to remind yourself of the plan.
 3. Reflect on what you've done and the TODO.
 4. Mark you task as completed, and proceed to the next TODO.
 5. Continue this process until you have completed all TODOs.
 
-IMPORTANT: Always create a research plan of TODOs and conduct research following the above guidelines for ANY user request.
-IMPORTANT: Aim to batch research tasks into a *single TODO* in order to minimize the number of TODOs you have to keep track of.
-"""
+IMPORTANT: Always create plan of TODOs and conduct research following the above guidelines for ANY user request.
+IMPORTANT: Aim to batch tasks into a *single TODO* in order to minimize the number of TODOs you have to keep track of."""
 
-LS_DESCRIPTION = """List all files in the virtual filesystem stored in agent state.
+TASK_SYSTEM_PROMPT = """## `task` (subagent spawner)
 
-Shows what files currently exist in agent memory. Use this to orient yourself before other file operations and maintain awareness of your file organization.
+You have access to a `task` tool to launch short-lived subagents that handle isolated tasks. These agents are ephemeral — they live only for the duration of the task and return a single result.
 
-No parameters required - simply call ls() to see all available files."""
+When to use the task tool:
+- When a task is complex and multi-step, and can be fully delegated in isolation
+- When a task is independent of other tasks and can run in parallel
+- When a task requires focused reasoning or heavy token/context usage that would bloat the orchestrator thread
+- When sandboxing improves reliability (e.g. code execution, structured searches, data formatting)
+- When you only care about the output of the subagent, and not the intermediate steps (ex. performing a lot of research and then returned a synthesized report, performing a series of computations or lookups to achieve a concise, relevant answer.)
 
-READ_FILE_DESCRIPTION = """Read content from a file in the virtual filesystem with optional pagination.
+Subagent lifecycle:
+1. **Spawn** → Provide clear role, instructions, and expected output
+2. **Run** → The subagent completes the task autonomously
+3. **Return** → The subagent provides a single structured result
+4. **Reconcile** → Incorporate or synthesize the result into the main thread
 
-This tool returns file content with line numbers (like `cat -n`) and supports reading large files in chunks to avoid context overflow.
+When NOT to use the task tool:
+- If you need to see the intermediate reasoning or steps after the subagent has completed (the task tool hides them)
+- If the task is trivial (a few tool calls or simple lookup)
+- If delegating does not reduce token usage, complexity, or context switching
+- If splitting would add latency without benefit
 
-Parameters:
-- file_path (required): Path to the file you want to read
-- offset (optional, default=0): Line number to start reading from
-- limit (optional, default=2000): Maximum number of lines to read
+## Important Task Tool Usage Notes to Remember
+- Whenever possible, parallelize the work that you do. This is true for both tool_calls, and for tasks. Whenever you have independent steps to complete - make tool_calls, or kick off tasks (subagents) in parallel to accomplish them faster. This saves time for the user, which is incredibly important.
+- Remember to use the `task` tool to silo independent tasks within a multi-part objective.
+- You should use the `task` tool whenever you have a complex task that will take multiple steps, and is independent from other tasks that the agent needs to complete. These agents are highly competent and efficient."""
 
-Essential before making any edits to understand existing content. Always read a file before editing it."""
+FILESYSTEM_SYSTEM_PROMPT = """## Filesystem Tools `ls`, `read_file`, `write_file`, `edit_file`
 
-WRITE_FILE_DESCRIPTION = """Create a new file or completely overwrite an existing file in the virtual filesystem.
+You have access to a local, private filesystem which you can interact with using these tools.
+- ls: list all files in the local filesystem
+- read_file: read a file from the local filesystem
+- write_file: write to a file in the local filesystem
+- edit_file: edit a file in the local filesystem"""
 
-This tool creates new files or replaces entire file contents. Use for initial file creation or complete rewrites. Files are stored persistently in agent state.
-
-Parameters:
-- file_path (required): Path where the file should be created/overwritten
-- content (required): The complete content to write to the file
-
-Important: This replaces the entire file content."""
-
-FILE_USAGE_INSTRUCTIONS = """You have access to a virtual file system to help you retain and save context.
-
-## Workflow Process
-1. **Orient**: Use ls() to see existing files before starting work
-2. **Save**: Use write_file() to store the user's request so that we can keep it for later
-3. **Research**: Proceed with research. The search tool will write files.
-4. **Read**: Once you are satisfied with the collected sources, read the files and use them to answer the user's question directly."""
-
-
-TASK_DESCRIPTION_PREFIX = """Delegate a task to a specialized sub-agent with isolated context. Available agents for delegation are:
-{sub_agents}
-"""
-
-SUBAGENT_USAGE_INSTRUCTIONS = """You can delegate tasks to sub-agents.
-
-<Task>
-Your role is to coordinate research by delegating specific research tasks to sub-agents.
-</Task>
-
-<Available Tools>
-1. **task(description, subagent_type)**: Delegate research tasks to specialized sub-agents
-   - description: Clear, specific research question or task
-   - subagent_type: Type of agent to use (e.g., "research-agent")
-2. **think_tool(reflection)**: Reflect on the results of each delegated task and plan next steps.
-   - reflection: Your detailed reflection on the results of the task and next steps.
-
-**PARALLEL RESEARCH**: When you identify multiple independent research directions, make multiple **task** tool calls in a single response to enable parallel execution. Use at most {max_concurrent_research_units} parallel agents per iteration.
-</Available Tools>
-
-<Hard Limits>
-**Task Delegation Budgets** (Prevent excessive delegation):
-- **Bias towards focused research** - Use single agent for simple questions, multiple only when clearly beneficial or when you have multiple independent research directions based on the user's request.
-- **Stop when adequate** - Don't over-research; stop when you have sufficient information
-- **Limit iterations** - Stop after {max_researcher_iterations} task delegations if you haven't found adequate sources
-</Hard Limits>
-
-<Scaling Rules>
-**Simple fact-finding, lists, and rankings** can use a single sub-agent:
-- *Example*: "List the top 10 coffee shops in San Francisco" → Use 1 sub-agent, store in `findings_coffee_shops.md`
-
-**Comparisons** can use a sub-agent for each element of the comparison:
-- *Example*: "Compare OpenAI vs. Anthropic vs. DeepMind approaches to AI safety" → Use 3 sub-agents
-- Store findings in separate files: `findings_openai_safety.md`, `findings_anthropic_safety.md`, `findings_deepmind_safety.md`
-
-**Multi-faceted research** can use parallel agents for different aspects:
-- *Example*: "Research renewable energy: costs, environmental impact, and adoption rates" → Use 3 sub-agents
-- Organize findings by aspect in separate files
-
-**Important Reminders:**
-- Each **task** call creates a dedicated research agent with isolated context
-- Sub-agents can't see each other's work - provide complete standalone instructions
-- Use clear, specific language - avoid acronyms or abbreviations in task descriptions
-</Scaling Rules>"""
-
-SUMMARIZE_WEB_SEARCH = """You are creating a minimal summary for research steering - your goal is to help an agent know what information it has collected, NOT to preserve all details.
-
-<webpage_content>
-{webpage_content}
-</webpage_content>
-
-Create a VERY CONCISE summary focusing on:
-1. Main topic/subject in 1-2 sentences
-2. Key information type (facts, tutorial, news, analysis, etc.)
-3. Most significant 1-2 findings or points
-
-Keep the summary under 150 words total. The agent needs to know what's in this file to decide if it should search for more information or use this source.
-
-Generate a descriptive filename that indicates the content type and topic (e.g., "mcp_protocol_overview.md", "ai_safety_research_2024.md").
-
-Output format:
-```json
-{{
-   "filename": "descriptive_filename.md",
-   "summary": "Very brief summary under 150 words focusing on main topic and key findings"
-}}
-```
-
-Today's date: {date}
-"""
-
-RESEARCHER_INSTRUCTIONS = """You are a research assistant conducting research on the user's input topic. For context, today's date is {date}.
-
-<Task>
-Your job is to use tools to gather information about the user's input topic.
-You can use any of the tools provided to you to find resources that can help answer the research question. You can call these tools in series or in parallel, your research is conducted in a tool-calling loop.
-</Task>
-
-<Available Tools>
-You have access to two main tools:
-1. **tavily_search**: For conducting web searches to gather information
-2. **think_tool**: For reflection and strategic planning during research
-
-**CRITICAL: Use think_tool after each search to reflect on results and plan next steps**
-</Available Tools>
-
-<Instructions>
-Think like a human researcher with limited time. Follow these steps:
-
-1. **Read the question carefully** - What specific information does the user need?
-2. **Start with broader searches** - Use broad, comprehensive queries first
-3. **After each search, pause and assess** - Do I have enough to answer? What's still missing?
-4. **Execute narrower searches as you gather information** - Fill in the gaps
-5. **Stop when you can answer confidently** - Don't keep searching for perfection
-</Instructions>
-
-<Hard Limits>
-**Tool Call Budgets** (Prevent excessive searching):
-- **Simple queries**: Use 1-2 search tool calls maximum
-- **Normal queries**: Use 2-3 search tool calls maximum
-- **Very Complex queries**: Use up to 5 search tool calls maximum
-- **Always stop**: After 5 search tool calls if you cannot find the right sources
-
-**Stop Immediately When**:
-- You can answer the user's question comprehensively
-- You have 3+ relevant examples/sources for the question
-- Your last 2 searches returned similar information
-</Hard Limits>
-
-<Show Your Thinking>
-After each search tool call, use think_tool to analyze the results:
-- What key information did I find?
-- What's missing?
-- Do I have enough to answer the question comprehensively?
-- Should I search more or provide my answer?
-</Show Your Thinking>
+BASE_AGENT_PROMPT = """
+In order to complete the objective that the user asks of you, you have access to a number of standard tools.
 """
